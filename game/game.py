@@ -14,8 +14,14 @@ class Game:
         pygame.init()
 
         self.screen = pygame.display.set_mode(
-            (config.WIDTH, config.HEIGHT)
+            (
+                config.SCREEN_WIDTH,
+                config.SCREEN_HEIGHT,
+            )
         )
+
+        self.camera_x = 0
+        self.camera_y = 0
 
         pygame.display.set_caption("Snake.io")
 
@@ -61,17 +67,39 @@ class Game:
             self.config,
             random.randint(
                 100,
-                self.config.WIDTH - 100
+                self.config.WORLD_WIDTH - 100
             ),
             random.randint(
                 100,
-                self.config.HEIGHT - 100
+                self.config.WORLD_HEIGHT - 100
             ),
             color,
             controller,
         )
 
         return snake
+    
+    # =========================
+    # CAMERA
+    # =========================
+    def update_camera(self):
+        if (
+            not self.config.PLAYER_ENABLED
+            or len(self.snakes) == 0
+        ):
+            return
+
+        player = self.snakes[0]
+
+        self.camera_x = (
+            player.x
+            - self.config.SCREEN_WIDTH // 2
+        )
+
+        self.camera_y = (
+            player.y
+            - self.config.SCREEN_HEIGHT // 2
+        )
 
     # =========================
     # PLAYER SNAKES
@@ -82,8 +110,8 @@ class Game:
 
         player = Snake(
             self.config,
-            self.config.WIDTH // 2,
-            self.config.HEIGHT // 2,
+            self.config.WORLD_WIDTH // 2,
+            self.config.WORLD_HEIGHT // 2,
             (0, 255, 100),
         )
 
@@ -202,9 +230,9 @@ class Game:
             # WALL COLLISION
             if (
                 snake.x < 0
-                or snake.x > self.config.WIDTH
+                or snake.x > self.config.WORLD_WIDTH
                 or snake.y < 0
-                or snake.y > self.config.HEIGHT
+                or snake.y > self.config.WORLD_HEIGHT
             ):
                 snake.alive = False
 
@@ -257,8 +285,8 @@ class Game:
             ):
                 new_snake = Snake(
                     self.config,
-                    self.config.WIDTH // 2,
-                    self.config.HEIGHT // 2,
+                    self.config.WORLD_WIDTH // 2,
+                    self.config.WORLD_HEIGHT // 2,
                     (0, 255, 100),
                 )
 
@@ -289,6 +317,8 @@ class Game:
                     snake
                 )
 
+        self.update_camera()
+
         # COLLISIONS
         self.check_snake_collisions()
 
@@ -299,32 +329,60 @@ class Game:
     # GRID
     # =========================
     def draw_grid(self):
-        spacing = (
-            self.config.GRID_SPACING
+        spacing = self.config.GRID_SPACING
+
+        start_x = int(
+            self.camera_x // spacing
+        ) * spacing
+
+        end_x = (
+            self.camera_x
+            + self.config.SCREEN_WIDTH
         )
 
+        start_y = int(
+            self.camera_y // spacing
+        ) * spacing
+
+        end_y = (
+            self.camera_y
+            + self.config.SCREEN_HEIGHT
+        )
+
+        # VERTICAL
         for x in range(
-            0,
-            self.config.WIDTH,
-            spacing
+            start_x,
+            int(end_x),
+            spacing,
         ):
+            screen_x = x - self.camera_x
+
             pygame.draw.line(
                 self.screen,
                 self.config.GRID_COLOR,
-                (x, 0),
-                (x, self.config.HEIGHT),
+                (screen_x, 0),
+                (
+                    screen_x,
+                    self.config.SCREEN_HEIGHT,
+                ),
             )
 
+        # HORIZONTAL
         for y in range(
-            0,
-            self.config.HEIGHT,
-            spacing
+            start_y,
+            int(end_y),
+            spacing,
         ):
+            screen_y = y - self.camera_y
+
             pygame.draw.line(
                 self.screen,
                 self.config.GRID_COLOR,
-                (0, y),
-                (self.config.WIDTH, y),
+                (0, screen_y),
+                (
+                    self.config.SCREEN_WIDTH,
+                    screen_y,
+                ),
             )
 
     
@@ -364,11 +422,19 @@ class Game:
 
         # FOOD
         for food in self.foods:
-            food.draw(self.screen)
+            food.draw(
+                self.screen,
+                self.camera_x,
+                self.camera_y,
+            )
 
         # SNAKES
         for snake in self.snakes:
-            snake.draw(self.screen)
+            snake.draw(
+                self.screen,
+                self.camera_x,
+                self.camera_y,
+            )
 
         # UI
         self.draw_stats()

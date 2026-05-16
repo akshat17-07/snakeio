@@ -127,7 +127,12 @@ class Snake:
     # =========================
     # DRAW BODY
     # =========================
-    def draw_body(self, screen):
+    def draw_body(
+        self,
+        screen,
+        camera_x,
+        camera_y,
+    ):
         body_len = len(self.body)
 
         if body_len == 0:
@@ -147,8 +152,8 @@ class Snake:
                 screen,
                 self.color,
                 (
-                    int(segment[0]),
-                    int(segment[1]),
+                    int(segment[0] - camera_x),
+                    int(segment[1] - camera_y),
                 ),
                 size,
             )
@@ -156,13 +161,18 @@ class Snake:
     # =========================
     # DRAW HEAD
     # =========================
-    def draw_head(self, screen):
+    def draw_head(
+        self,
+        screen,
+        camera_x,
+        camera_y,
+    ):
         pygame.draw.circle(
             screen,
             (255, 255, 255),
             (
-                int(self.x),
-                int(self.y),
+                int(self.x - camera_x),
+                int(self.y - camera_y),
             ),
             self.radius,
         )
@@ -181,7 +191,12 @@ class Snake:
     # =========================
     # DRAW EYES
     # =========================
-    def draw_eyes(self, screen):
+    def draw_eyes(
+        self,
+        screen,
+        camera_x,
+        camera_y,
+    ):
         rad = math.radians(self.angle)
 
         eye_distance = 6
@@ -223,8 +238,8 @@ class Snake:
             screen,
             (0, 0, 0),
             (
-                int(left_eye_x),
-                int(left_eye_y),
+                int(left_eye_x - camera_x),
+                int(left_eye_y - camera_y),
             ),
             eye_radius,
         )
@@ -233,8 +248,8 @@ class Snake:
             screen,
             (0, 0, 0),
             (
-                int(right_eye_x),
-                int(right_eye_y),
+                int(right_eye_x - camera_x),
+                int(right_eye_y - camera_y),
             ),
             eye_radius,
         )
@@ -242,12 +257,28 @@ class Snake:
     # =========================
     # DRAW
     # =========================
-    def draw(self, screen):
+    def draw(
+        self,
+        screen,
+        camera_x,
+        camera_y,
+    ):
         if not self.alive:
             return
+        self.draw_body(
+            screen,
+            camera_x,
+            camera_y,
+        )
 
-        self.draw_body(screen)
+        self.draw_head(
+            screen,
+            camera_x,
+            camera_y,
+        )
 
-        self.draw_head(screen)
-
-        self.draw_eyes(screen)
+        self.draw_eyes(
+            screen,
+            camera_x,
+            camera_y,
+        )

@@ -16,7 +16,7 @@ class Food:
             if x is not None
             else random.randint(
                 0,
-                config.WIDTH
+                config.WORLD_WIDTH
             )
         )
 
@@ -25,7 +25,7 @@ class Food:
             if y is not None
             else random.randint(
                 0,
-                config.HEIGHT
+                config.WORLD_HEIGHT
             )
         )
 
@@ -38,13 +38,18 @@ class Food:
     # =========================
     # DRAW
     # =========================
-    def draw(self, screen):
+    def draw(
+        self,
+        screen,
+        camera_x,
+        camera_y,
+    ):
         pygame.draw.circle(
             screen,
             self.color,
             (
-                int(self.x),
-                int(self.y),
+                int(self.x - camera_x),
+                int(self.y - camera_y),
             ),
             self.config.FOOD_RADIUS,
         )

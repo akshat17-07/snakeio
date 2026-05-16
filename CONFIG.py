@@ -5,8 +5,13 @@ class GameConfig:
         height=900,
         fps=60,
     ):
-        self.WIDTH = width
-        self.HEIGHT = height
+        # SCREEN
+        self.SCREEN_WIDTH = width
+        self.SCREEN_HEIGHT = height
+
+        # WORLD
+        self.WORLD_WIDTH = 6000
+        self.WORLD_HEIGHT = 6000
         self.FPS = fps
 
         # WORLD
