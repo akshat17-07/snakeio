@@ -2,37 +2,66 @@ import random
 import math
 
 
+import random
+import math
+
+
 class RandomAIController:
     def __init__(self):
-        # CHANGE DIRECTION TIMER
-        self.timer = 0
+        # TURN TIMER
+        self.turn_timer = 0
 
-        # -1 = LEFT
-        #  0 = FORWARD
-        #  1 = RIGHT
+        # BOOST TIMER
+        self.boost_timer = 0
+
+        # -1 LEFT
+        #  0 FORWARD
+        #  1 RIGHT
         self.direction = 0
 
     # =========================
-    # UPDATE AI
+    # UPDATE
     # =========================
     def update(self, snake):
-        self.timer -= 1
+        # =========================
+        # RANDOM TURNING
+        # =========================
+        self.turn_timer -= 1
 
-        # RANDOMLY CHANGE DECISION
-        if self.timer <= 0:
-            self.timer = random.randint(15, 60)
+        if self.turn_timer <= 0:
+            self.turn_timer = random.randint(
+                10,
+                50,
+            )
 
             self.direction = random.choice(
                 [-1, 0, 1]
             )
 
-        # APPLY MOVEMENT
+        # APPLY TURN
         if self.direction == -1:
             snake.turn_left()
 
         elif self.direction == 1:
             snake.turn_right()
 
+        # =========================
+        # RANDOM BOOSTING
+        # =========================
+        self.boost_timer -= 1
+
+        if self.boost_timer <= 0:
+            self.boost_timer = random.randint(
+                40,
+                150,
+            )
+
+            should_boost = random.random() < 0.35
+
+            if should_boost:
+                snake.start_boost()
+            else:
+                snake.stop_boost()
 
 # =====================================
 # FUTURE ML CONTROLLER
