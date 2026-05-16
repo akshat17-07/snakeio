@@ -22,11 +22,11 @@ class GameConfig:
         self.GRID_COLOR = (35, 35, 45)
 
         # SNAKES
-        self.SNAKE_COUNT = 10
+        self.SNAKE_COUNT = 30
         self.INITIAL_LENGTH = 30
         self.FOOD_DROP_DIVISOR = 5
 
-        self.SNAKE_SPEED = 4
+        self.SNAKE_SPEED = 3
         self.SNAKE_RADIUS = 12
         self.TURN_SPEED = 4
 
@@ -34,7 +34,7 @@ class GameConfig:
         self.PLAYER_ENABLED = True
 
         # FOOD
-        self.FOOD_COUNT = 300
+        self.FOOD_COUNT = 800
         self.FOOD_RADIUS = 4
 
         # BOOST

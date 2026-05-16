@@ -83,22 +83,45 @@ class Game:
     # CAMERA
     # =========================
     def update_camera(self):
-        if (
-            not self.config.PLAYER_ENABLED
-            or len(self.snakes) == 0
-        ):
+        if len(self.snakes) == 0:
             return
 
-        player = self.snakes[0]
+        # PLAYER MODE
+        if self.config.PLAYER_ENABLED:
+            target = self.snakes[0]
 
+        # AI MODE
+        else:
+            target = self.snakes[0]
+
+        # CENTER CAMERA ON TARGET
         self.camera_x = (
-            player.x
+            target.x
             - self.config.SCREEN_WIDTH // 2
         )
 
         self.camera_y = (
-            player.y
+            target.y
             - self.config.SCREEN_HEIGHT // 2
+        )
+
+        # WORLD CLAMP
+        self.camera_x = max(
+            0,
+            min(
+                self.camera_x,
+                self.config.WORLD_WIDTH
+                - self.config.SCREEN_WIDTH,
+            ),
+        )
+
+        self.camera_y = max(
+            0,
+            min(
+                self.camera_y,
+                self.config.WORLD_HEIGHT
+                - self.config.SCREEN_HEIGHT,
+            ),
         )
 
     # =========================
