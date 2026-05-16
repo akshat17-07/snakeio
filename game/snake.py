@@ -44,6 +44,10 @@ class Snake:
         # STATS
         self.kills = 0
 
+        # BOOST
+        # BOOST
+        self.is_boosting = False
+
     # =========================
     # CONTROLS
     # =========================
@@ -56,12 +60,40 @@ class Snake:
     # =========================
     # MOVE FORWARD
     # =========================
+    # =========================
+    # MOVE FORWARD
+    # =========================
     def move_forward(self):
+        speed = self.speed
+
+        # BOOST SPEED
+        if self.is_boosting:
+            speed *= (
+                self.config
+                .BOOST_SPEED_MULTIPLIER
+            )
+
+            # LOSE LENGTH
+            self.length -= (
+                self.config
+                .BOOST_LOSS_AMOUNT
+            )
+
+            # STOP BOOST IF TOO SMALL
+            if (
+                self.length
+                <= self.config.MIN_BOOST_LENGTH
+            ):
+                self.length = (
+                    self.config.MIN_BOOST_LENGTH
+                )
+
+                self.is_boosting = False
+
         rad = math.radians(self.angle)
 
-        self.x += math.cos(rad) * self.speed
-        self.y += math.sin(rad) * self.speed
-
+        self.x += math.cos(rad) * speed
+        self.y += math.sin(rad) * speed
     # =========================
     # UPDATE
     # =========================
@@ -134,6 +166,17 @@ class Snake:
             ),
             self.radius,
         )
+
+    # =========================
+    # BOOST
+    # =========================
+    def start_boost(self):
+        if self.length > self.config.MIN_BOOST_LENGTH:
+            self.is_boosting = True
+
+
+    def stop_boost(self):
+        self.is_boosting = False
 
     # =========================
     # DRAW EYES

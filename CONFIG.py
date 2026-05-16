@@ -25,6 +25,14 @@ class GameConfig:
         self.SNAKE_RADIUS = 12
         self.TURN_SPEED = 4
 
+        # PLAYER ENABLE
+        self.PLAYER_ENABLED = True
+
         # FOOD
         self.FOOD_COUNT = 300
         self.FOOD_RADIUS = 4
+
+        # BOOST
+        self.BOOST_SPEED_MULTIPLIER = 2
+        self.BOOST_LOSS_AMOUNT = 0.08
+        self.MIN_BOOST_LENGTH = 20

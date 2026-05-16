@@ -77,25 +77,19 @@ class Game:
     # PLAYER SNAKES
     # =========================
     def spawn_player_snakes(self):
-        player1 = Snake(
+        if not self.config.PLAYER_ENABLED:
+            return
+
+        player = Snake(
             self.config,
-            300,
-            300,
+            self.config.WIDTH // 2,
+            self.config.HEIGHT // 2,
             (0, 255, 100),
         )
 
-        player2 = Snake(
-            self.config,
-            1000,
-            700,
-            (255, 100, 100),
-        )
+        player.angle = 0
 
-        player1.angle = 0
-        player2.angle = 180
-
-        self.snakes.append(player1)
-        self.snakes.append(player2)
+        self.snakes.append(player)
 
     # =========================
     # AI SNAKES
@@ -120,21 +114,28 @@ class Game:
     # INPUT
     # =========================
     def handle_input(self):
+        if not self.config.PLAYER_ENABLED:
+            return
+
+        if len(self.snakes) == 0:
+            return
+
+        player = self.snakes[0]
+
         keys = pygame.key.get_pressed()
 
-        # PLAYER 1
+        # TURN
         if keys[pygame.K_a]:
-            self.snakes[0].turn_left()
+            player.turn_left()
 
         if keys[pygame.K_d]:
-            self.snakes[0].turn_right()
+            player.turn_right()
 
-        # PLAYER 2
-        if keys[pygame.K_LEFT]:
-            self.snakes[1].turn_left()
-
-        if keys[pygame.K_RIGHT]:
-            self.snakes[1].turn_right()
+        # BOOST
+        if keys[pygame.K_w]:
+            player.start_boost()
+        else:
+            player.stop_boost()
 
     # =========================
     # FOOD COLLISION
@@ -248,32 +249,25 @@ class Game:
                 is not None
             )
 
-            # PLAYER 1
-            if i == 0:
+            # PLAYER
+            if (
+                self.config.PLAYER_ENABLED
+                and i == 0
+                and not is_ai
+            ):
                 new_snake = Snake(
                     self.config,
-                    300,
-                    300,
+                    self.config.WIDTH // 2,
+                    self.config.HEIGHT // 2,
                     (0, 255, 100),
                 )
 
                 new_snake.angle = 0
 
-            # PLAYER 2
-            elif i == 1:
-                new_snake = Snake(
-                    self.config,
-                    1000,
-                    700,
-                    (255, 100, 100),
-                )
-
-                new_snake.angle = 180
-
             # AI
             else:
                 new_snake = self.create_snake(
-                    ai=is_ai
+                    ai=True
                 )
 
             self.snakes[i] = new_snake
@@ -333,34 +327,31 @@ class Game:
                 (self.config.WIDTH, y),
             )
 
+    
     # =========================
     # UI
     # =========================
     def draw_stats(self):
-        y = 10
+        if not self.config.PLAYER_ENABLED:
+            return
 
-        for i, snake in enumerate(
-            self.snakes[:2]
-        ):
-            text = (
-                f"P{i+1} | "
-                f"Length: {snake.length} | "
-                f"Kills: {snake.kills}"
-            )
+        if len(self.snakes) == 0:
+            return
 
-            surface = self.font.render(
-                text,
-                True,
-                (255, 255, 255),
-            )
+        player = self.snakes[0]
 
-            self.screen.blit(
-                surface,
-                (10, y),
-            )
+        text = (
+            f"Length: {int(player.length)} | "
+            f"Kills: {player.kills}"
+        )
 
-            y += 30
+        surface = self.font.render(
+            text,
+            True,
+            (255, 255, 255),
+        )
 
+        self.screen.blit(surface, (10, 10))
     # =========================
     # DRAW
     # =========================
