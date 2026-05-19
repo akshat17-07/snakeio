@@ -5,9 +5,8 @@ import pygame
 from game.snake import Snake
 from game.food import Food
 from game.ai_controller import MLController
-from game.observation_system import (
-    ObservationSystem
-)
+from game.observation_system import ObservationSystem
+from game.save_system import SaveSystem
 
 
 class Game:
@@ -17,6 +16,8 @@ class Game:
         self.observation_system = (
             ObservationSystem(config)
         )
+
+        self.save_system = SaveSystem()
 
         pygame.init()
 
@@ -30,13 +31,17 @@ class Game:
         self.camera_x = 0
         self.camera_y = 0
 
-        self.generation = 1
+        self.generation = (
+            self.save_system
+            .get_latest_generation()
+        )
 
         pygame.display.set_caption("Snake.io")
 
         self.clock = pygame.time.Clock()
 
         self.running = True
+        self.generation_timer = 0
 
         self.font = pygame.font.SysFont(None, 30)
 
@@ -315,46 +320,12 @@ class Game:
                         break
 
     # =========================
-    # RESPAWN DEAD SNAKES
-    # =========================
-    def respawn_dead_snakes(self):
-        for i, snake in enumerate(self.snakes):
-            if snake.alive:
-                continue
-
-            is_ai = (
-                snake.ai_controller
-                is not None
-            )
-
-            # PLAYER
-            if (
-                self.config.PLAYER_ENABLED
-                and i == 0
-                and not is_ai
-            ):
-                new_snake = Snake(
-                    self.config,
-                    self.config.WORLD_WIDTH // 2,
-                    self.config.WORLD_HEIGHT // 2,
-                    (0, 255, 100),
-                )
-
-                new_snake.angle = 0
-
-            # AI
-            else:
-                new_snake = self.create_snake(
-                    ai=True
-                )
-
-            self.snakes[i] = new_snake
-
-    # =========================
     # UPDATE
     # =========================
     def update(self):
         self.handle_input()
+        # GENERATION TIMER
+        self.generation_timer += 1
 
         # MOVE
         for snake in self.snakes:
@@ -383,6 +354,7 @@ class Game:
         # FOOD
         for snake in self.snakes:
             if snake.alive:
+                snake.calculate_fitness()
                 self.check_food_collision(
                     snake
                 )
@@ -401,7 +373,13 @@ class Game:
             for snake in self.snakes
         )
 
-        if alive_count == 0:
+        if (
+            alive_count <= 1
+            or
+            self.generation_timer
+            >=
+            self.config.EVOLUTION[10]
+        ):
 
             print("GENERATION OVER")
 
@@ -536,11 +514,17 @@ class Game:
     # =========================
     def next_generation(self):
 
+        # NEXT GENERATION
         self.generation += 1
 
-        print("CREATING NEXT GENERATION")
+        print(
+            "GENERATION:",
+            self.generation
+        )
 
+        # =====================================
         # SORT BY FITNESS
+        # =====================================
         ranked = sorted(
             self.snakes,
             key=lambda s: s.fitness,
@@ -555,37 +539,92 @@ class Game:
             best.fitness
         )
 
+        # =====================================
+        # SAVE
+        # =====================================
+        self.save_system.save_generation(
+            self.snakes,
+            self.generation,
+        )
+
+        self.save_system.save_best_genome(
+            best,
+            self.generation,
+        )
+
+        # =====================================
         # NEW POPULATION
+        # =====================================
         new_snakes = []
+
+        # TOP 10%
+        elite_count = max(
+            1,
+            self.config.SNAKE_COUNT // 10
+        )
+
+        elites = ranked[:elite_count]
 
         for _ in range(
             self.config.SNAKE_COUNT
         ):
 
-            # COPY BEST PARAMETERS
-            controller = RandomAIController()
+            # =====================================
+            # PICK PARENT
+            # =====================================
+            parent = random.choice(
+                elites
+            )
 
+            # =====================================
+            # MUTATE GENOME
+            # =====================================
+            genome = (
+                parent
+                .ai_controller
+                .mutate_genome()
+            )
+
+            controller = MLController(
+                genome=genome
+            )
+
+            # =====================================
+            # CREATE CHILD
+            # =====================================
             snake = Snake(
                 self.config,
+
                 random.randint(
                     100,
                     self.config.WORLD_WIDTH - 100
                 ),
+
                 random.randint(
                     100,
                     self.config.WORLD_HEIGHT - 100
                 ),
+
                 (
                     random.randint(50, 255),
                     random.randint(50, 255),
                     random.randint(50, 255),
                 ),
+
                 controller,
             )
 
-            new_snakes.append(snake)
+            snake.generation = (
+                self.generation
+            )
 
+            new_snakes.append(
+                snake
+            )
+
+        # =====================================
         # RESET FOOD
+        # =====================================
         self.foods = [
             Food(self.config)
             for _ in range(
@@ -593,9 +632,14 @@ class Game:
             )
         ]
 
+        # RESET CAMERA
         self.camera_x = 0
         self.camera_y = 0
 
+        # RESET GENERATION TIMER
+        self.generation_timer = 0
+
+        # REPLACE POPULATION
         self.snakes = new_snakes
 
 

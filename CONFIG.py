@@ -10,9 +10,9 @@ class GameConfig:
         self.SCREEN_HEIGHT = height
 
         # WORLD
-        self.WORLD_WIDTH = 6000
-        self.WORLD_HEIGHT = 6000
-        self.FPS = fps
+        self.WORLD_WIDTH = 4000
+        self.WORLD_HEIGHT = 4000
+        self.FPS = 1000
 
         # WORLD
         self.GRID_SPACING = 80
@@ -22,19 +22,19 @@ class GameConfig:
         self.GRID_COLOR = (35, 35, 45)
 
         # SNAKES
-        self.SNAKE_COUNT = 30
+        self.SNAKE_COUNT = 100
         self.INITIAL_LENGTH = 30
         self.FOOD_DROP_DIVISOR = 5
 
-        self.SNAKE_SPEED = 3
+        self.SNAKE_SPEED = 4
         self.SNAKE_RADIUS = 12
         self.TURN_SPEED = 4
 
         # PLAYER ENABLE
-        self.PLAYER_ENABLED = True
+        self.PLAYER_ENABLED = False
 
         # FOOD
-        self.FOOD_COUNT = 800
+        self.FOOD_COUNT = 1500
         self.FOOD_RADIUS = 4
         self.FOOD_RANGE = 25
 
@@ -243,13 +243,13 @@ class GameConfig:
         100,
 
         # ELITE COUNT
-        10,
+        20,
 
         # MUTATION RATE
-        0.05,
+        0.15,
 
         # MUTATION STRENGTH
-        0.1,
+        0.2,
 
         # RANDOM AGENT COUNT
         5,
@@ -270,7 +270,7 @@ class GameConfig:
         0.02,
 
         # GENERATION LENGTH
-        3000,
+        5000,
 
         # FITNESS_DECAY
         0.99,
@@ -295,13 +295,13 @@ class GameConfig:
         1.0,
 
         # KILL WEIGHT
-        25.0,
+        10.0,
 
         # SURVIVAL WEIGHT
-        0.01,
+        0.05,
 
         # DEATH PENALTY
-        -50.0,
+        -200.0,
 
         # FOOD EFFICIENCY
         2.0,
