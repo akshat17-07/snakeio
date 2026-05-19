@@ -1,34 +1,29 @@
 import random
-import math
+import numpy as np
 
 
-import random
-import math
-
-
+# =====================================
+# RANDOM AI
+# =====================================
 class RandomAIController:
     def __init__(self):
-        # TURN TIMER
+
         self.turn_timer = 0
 
-        # BOOST TIMER
         self.boost_timer = 0
 
-        # -1 LEFT
-        #  0 FORWARD
-        #  1 RIGHT
         self.direction = 0
 
-    # =========================
+    # =====================================
     # UPDATE
-    # =========================
+    # =====================================
     def update(self, snake):
-        # =========================
+
         # RANDOM TURNING
-        # =========================
         self.turn_timer -= 1
 
         if self.turn_timer <= 0:
+
             self.turn_timer = random.randint(
                 10,
                 50,
@@ -45,115 +40,240 @@ class RandomAIController:
         elif self.direction == 1:
             snake.turn_right()
 
-        # =========================
         # RANDOM BOOSTING
-        # =========================
         self.boost_timer -= 1
 
         if self.boost_timer <= 0:
+
             self.boost_timer = random.randint(
                 40,
                 150,
             )
 
-            should_boost = random.random() < 0.35
+            should_boost = (
+                random.random() < 0.35
+            )
 
             if should_boost:
                 snake.start_boost()
+
             else:
                 snake.stop_boost()
 
+
 # =====================================
-# FUTURE ML CONTROLLER
+# ML CONTROLLER
 # =====================================
 class MLController:
-    def __init__(self, model=None):
-        self.model = model
-
-    # =========================
-    # GET GAME STATE
-    # =========================
-    def get_state(
+    def __init__(
         self,
-        snake,
-        foods,
-        snakes,
+        genome=None,
     ):
-        """
-        Convert world into ML inputs.
-        """
 
-        nearest_food = None
-        nearest_distance = float("inf")
+        # =====================================
+        # GENOME
+        # =====================================
+        self.genome = genome or {
 
-        for food in foods:
-            dist = math.hypot(
-                snake.x - food.x,
-                snake.y - food.y,
-            )
-
-            if dist < nearest_distance:
-                nearest_distance = dist
-                nearest_food = food
-
-        state = {
-            "snake_x": snake.x,
-            "snake_y": snake.y,
-            "angle": snake.angle,
-            "length": snake.length,
-            "nearest_food_x": (
-                nearest_food.x
-                if nearest_food
-                else 0
+            # TURNING
+            "turn_threshold": random.uniform(
+                0.2,
+                0.8,
             ),
-            "nearest_food_y": (
-                nearest_food.y
-                if nearest_food
-                else 0
+
+            # BOOSTING
+            "boost_threshold": random.uniform(
+                0.1,
+                0.9,
             ),
-            "nearest_food_distance": (
-                nearest_distance
+
+            # FOOD PRIORITY
+            "food_priority": random.uniform(
+                0.0,
+                1.0,
+            ),
+
+            # DANGER SENSITIVITY
+            "danger_sensitivity": random.uniform(
+                0.0,
+                1.0,
+            ),
+
+            # RANDOMNESS
+            "randomness": random.uniform(
+                0.0,
+                0.2,
             ),
         }
 
-        return state
+        # OBSERVATION GRID
+        self.grid = None
 
-    # =========================
+    # =====================================
+    # MUTATE GENOME
+    # =====================================
+    def mutate_genome(self):
+
+        mutated = {}
+
+        for key, value in (
+            self.genome.items()
+        ):
+
+            mutation = random.uniform(
+                -0.1,
+                0.1,
+            )
+
+            new_value = (
+                value + mutation
+            )
+
+            # CLAMP
+            new_value = max(
+                0.0,
+                min(1.0, new_value)
+            )
+
+            mutated[key] = new_value
+
+        return mutated
+
+    # =====================================
     # PREDICT ACTION
-    # =========================
-    def predict_action(self, state):
-        """
-        Placeholder for ML model.
+    # =====================================
+    def predict_action(
+        self,
+    ):
 
-        Return:
-        -1 = LEFT
-         0 = FORWARD
-         1 = RIGHT
-        """
+        if self.grid is None:
+            return 0
 
-        return random.choice([-1, 0, 1])
+        size = self.grid.shape[0]
 
-    # =========================
+        center = size // 2
+
+        # =====================================
+        # REGIONS
+        # =====================================
+
+        # FORWARD
+        forward_region = (
+            self.grid[
+                center-8:center+8,
+                center:center+20,
+            ]
+        )
+
+        # LEFT
+        left_region = (
+            self.grid[
+                center-20:center,
+                center-8:center+8,
+            ]
+        )
+
+        # RIGHT
+        right_region = (
+            self.grid[
+                center:center+20,
+                center-8:center+8,
+            ]
+        )
+
+        # =====================================
+        # SCORES
+        # =====================================
+
+        forward_score = np.sum(
+            forward_region
+        )
+
+        left_score = np.sum(
+            left_region
+        )
+
+        right_score = np.sum(
+            right_region
+        )
+
+        # =====================================
+        # DANGER
+        # =====================================
+
+        danger_weight = (
+            self.genome[
+                "danger_sensitivity"
+            ]
+        )
+
+        left_score *= danger_weight
+        right_score *= danger_weight
+
+        # =====================================
+        # RANDOMNESS
+        # =====================================
+
+        if (
+            random.random()
+            <
+            self.genome[
+                "randomness"
+            ]
+        ):
+            return random.choice(
+                [-1, 0, 1]
+            )
+
+        # =====================================
+        # DECISION
+        # =====================================
+
+        if left_score > right_score:
+
+            return -1
+
+        elif right_score > left_score:
+
+            return 1
+
+        return 0
+
+    # =====================================
     # UPDATE
-    # =========================
+    # =====================================
     def update(
         self,
         snake,
-        foods=None,
-        snakes=None,
     ):
-        state = self.get_state(
-            snake,
-            foods or [],
-            snakes or [],
+
+        action = (
+            self.predict_action()
         )
 
-        action = self.predict_action(
-            state
-        )
-
+        # LEFT
         if action == -1:
             snake.turn_left()
 
+        # RIGHT
         elif action == 1:
             snake.turn_right()
+
+        # =====================================
+        # BOOST
+        # =====================================
+
+        boost_threshold = (
+            self.genome[
+                "boost_threshold"
+            ]
+        )
+
+        if (
+            random.random()
+            < boost_threshold
+        ):
+            snake.start_boost()
+
+        else:
+            snake.stop_boost()

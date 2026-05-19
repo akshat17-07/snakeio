@@ -44,6 +44,21 @@ class Snake:
         # STATS
         self.kills = 0
 
+        # FITNESS
+        self.fitness = 0
+
+        # SURVIVAL
+        self.frames_alive = 0
+
+        # FOOD
+        self.food_eaten = 0
+
+        # DAMAGE
+        self.damage_taken = 0
+
+        # GENERATION
+        self.generation = 0
+
         # BOOST
         # BOOST
         self.is_boosting = False
@@ -100,6 +115,9 @@ class Snake:
     def update(self):
         if not self.alive:
             return
+        
+        # SURVIVAL TIME
+        self.frames_alive += 1
 
         # AI CONTROLLER
         if self.ai_controller:
@@ -123,6 +141,8 @@ class Snake:
     # =========================
     def grow(self, amount=8):
         self.length += amount
+
+        self.food_eaten += 1
 
     # =========================
     # DRAW BODY
@@ -255,6 +275,48 @@ class Snake:
         )
 
     # =========================
+    # CALCULATE FITNESS
+    # =========================
+    def calculate_fitness(self):
+
+        if self.fitness != 0:
+            return self.fitness
+
+        self.fitness = (
+
+            # SURVIVAL
+            self.frames_alive
+            * self.config.FITNESS[2]
+
+            +
+
+            # LENGTH
+            self.length
+            * self.config.FITNESS[0]
+
+            +
+
+            # KILLS
+            self.kills
+            * self.config.FITNESS[1]
+
+            +
+
+            # FOOD
+            self.food_eaten
+            * self.config.FITNESS[4]
+        )
+
+        # DEATH PENALTY
+        if not self.alive:
+
+            self.fitness += (
+                self.config.FITNESS[3]
+            )
+
+        return self.fitness
+
+    # =========================
     # DRAW
     # =========================
     def draw(
@@ -282,3 +344,5 @@ class Snake:
             camera_x,
             camera_y,
         )
+
+    

@@ -4,12 +4,19 @@ import pygame
 
 from game.snake import Snake
 from game.food import Food
-from game.ai_controller import RandomAIController
+from game.ai_controller import MLController
+from game.observation_system import (
+    ObservationSystem
+)
 
 
 class Game:
     def __init__(self, config):
         self.config = config
+
+        self.observation_system = (
+            ObservationSystem(config)
+        )
 
         pygame.init()
 
@@ -22,6 +29,8 @@ class Game:
 
         self.camera_x = 0
         self.camera_y = 0
+
+        self.generation = 1
 
         pygame.display.set_caption("Snake.io")
 
@@ -58,7 +67,7 @@ class Game:
         )
 
         controller = (
-            RandomAIController()
+            MLController()
             if ai
             else None
         )
@@ -83,18 +92,29 @@ class Game:
     # CAMERA
     # =========================
     def update_camera(self):
-        if len(self.snakes) == 0:
+
+        alive_snakes = [
+            snake
+            for snake in self.snakes
+            if snake.alive
+        ]
+
+        if len(alive_snakes) == 0:
             return
 
         # PLAYER MODE
         if self.config.PLAYER_ENABLED:
-            target = self.snakes[0]
+            target = alive_snakes[0]
 
         # AI MODE
         else:
-            target = self.snakes[0]
 
-        # CENTER CAMERA ON TARGET
+            # FOLLOW BEST ALIVE SNAKE
+            target = max(
+                alive_snakes,
+                key=lambda s: s.length,
+            )
+
         self.camera_x = (
             target.x
             - self.config.SCREEN_WIDTH // 2
@@ -105,7 +125,6 @@ class Game:
             - self.config.SCREEN_HEIGHT // 2
         )
 
-        # WORLD CLAMP
         self.camera_x = max(
             0,
             min(
@@ -204,6 +223,7 @@ class Game:
                 dist
                 < snake.radius
                 + self.config.FOOD_RADIUS
+                + self.config.FOOD_RANGE
             ):
                 snake.grow()
 
@@ -257,7 +277,11 @@ class Game:
                 or snake.y < 0
                 or snake.y > self.config.WORLD_HEIGHT
             ):
+                
                 snake.alive = False
+
+                snake.calculate_fitness()
+                
 
                 self.drop_food(snake)
 
@@ -279,7 +303,10 @@ class Game:
                     )
 
                     if dist < snake.radius:
+
                         snake.alive = False
+
+                        snake.calculate_fitness()
 
                         other.kills += 1
 
@@ -331,8 +358,28 @@ class Game:
 
         # MOVE
         for snake in self.snakes:
+
+            if not snake.alive:
+                continue
+
             snake.update()
 
+            # =========================
+            # AI OBSERVATION
+            # =========================
+            if snake.ai_controller:
+
+                grid = (
+                    self.observation_system
+                    .build_observation(
+                        snake,
+                        self.foods,
+                        self.snakes,
+                    )
+                )
+
+                snake.ai_controller.grid = grid
+        
         # FOOD
         for snake in self.snakes:
             if snake.alive:
@@ -343,10 +390,30 @@ class Game:
         self.update_camera()
 
         # COLLISIONS
+        # COLLISIONS
         self.check_snake_collisions()
 
+        # =========================
+        # GENERATION END
+        # =========================
+        alive_count = sum(
+            snake.alive
+            for snake in self.snakes
+        )
+
+        if alive_count == 0:
+
+            print("GENERATION OVER")
+
+            for snake in self.snakes:
+
+                print(
+                    snake.fitness
+                )
+
+            self.next_generation()
         # RESPAWN
-        self.respawn_dead_snakes()
+        # self.respawn_dead_snakes()
 
     # =========================
     # GRID
@@ -463,6 +530,74 @@ class Game:
         self.draw_stats()
 
         pygame.display.flip()
+
+    # =========================
+    # NEXT GENERATION
+    # =========================
+    def next_generation(self):
+
+        self.generation += 1
+
+        print("CREATING NEXT GENERATION")
+
+        # SORT BY FITNESS
+        ranked = sorted(
+            self.snakes,
+            key=lambda s: s.fitness,
+            reverse=True,
+        )
+
+        # BEST SNAKE
+        best = ranked[0]
+
+        print(
+            "BEST FITNESS:",
+            best.fitness
+        )
+
+        # NEW POPULATION
+        new_snakes = []
+
+        for _ in range(
+            self.config.SNAKE_COUNT
+        ):
+
+            # COPY BEST PARAMETERS
+            controller = RandomAIController()
+
+            snake = Snake(
+                self.config,
+                random.randint(
+                    100,
+                    self.config.WORLD_WIDTH - 100
+                ),
+                random.randint(
+                    100,
+                    self.config.WORLD_HEIGHT - 100
+                ),
+                (
+                    random.randint(50, 255),
+                    random.randint(50, 255),
+                    random.randint(50, 255),
+                ),
+                controller,
+            )
+
+            new_snakes.append(snake)
+
+        # RESET FOOD
+        self.foods = [
+            Food(self.config)
+            for _ in range(
+                self.config.FOOD_COUNT
+            )
+        ]
+
+        self.camera_x = 0
+        self.camera_y = 0
+
+        self.snakes = new_snakes
+
 
     # =========================
     # RUN
